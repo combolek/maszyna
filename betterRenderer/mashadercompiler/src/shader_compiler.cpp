@@ -92,6 +92,7 @@ YAML::Binary MaShaderCompiler::CompileShaderToBlob(
   args.emplace_back(L"-HV");
   args.emplace_back(L"2021");
   args.emplace_back(L"-Zpc");
+  args.emplace_back(L"-no-warnings");
 
   for (const auto &include_path : include_paths) {
     args.emplace_back(L"-I");
