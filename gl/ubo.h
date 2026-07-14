@@ -37,8 +37,6 @@ namespace gl
     // structs must match with GLSL
     // ordered to minimize padding
 
-#pragma pack(push, 1)
-
     const size_t MAX_TEXTURES = 8;
     const size_t ENVMAP_SIZE = 1024;
     const size_t MAX_CASCADES = 3;
@@ -148,6 +146,4 @@ namespace gl
     };
 
     static_assert(sizeof(light_ubs) == 32 + sizeof(light_element_ubs) * MAX_LIGHTS, "bad size of ubs");
-
-#pragma pack(pop)
 }
