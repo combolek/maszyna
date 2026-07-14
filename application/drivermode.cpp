@@ -29,6 +29,10 @@ http://mozilla.org/MPL/2.0/.
 #include "utilities/Timer.h"
 #include "rendering/renderer.h"
 #include "utilities/Logs.h"
+#if defined(__linux__)
+#include <valgrind/callgrind.h>
+#endif
+
 /*
 namespace input {
 
@@ -171,6 +175,11 @@ bool driver_mode::update()
 	simulation::State.update_scripting_interface();
 	simulation::Environment.update();
 
+#if defined(__linux__)
+	CALLGRIND_START_INSTRUMENTATION;
+	CALLGRIND_TOGGLE_COLLECT;
+#endif
+
 	if (deltatime != 0.0 || false == simulation::is_ready)
 	{
 		// jak pauza, to nie ma po co tego przeliczać
@@ -293,6 +302,11 @@ bool driver_mode::update()
 		simulation::Region->update_events();
 		simulation::Lights.update();
 	}
+
+#if defined(__linux__)
+	CALLGRIND_TOGGLE_COLLECT;
+	CALLGRIND_STOP_INSTRUMENTATION;
+#endif
 
 	// render time routines follow:
 
