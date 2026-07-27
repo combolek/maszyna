@@ -40,6 +40,10 @@ user_command command; // currently issued control command, if any
 
 }
 */
+
+// time acceleration used during profiling runs
+auto const EU07_PROFILING_TIMESPEED{20.0};
+
 void driver_mode::drivermode_input::poll()
 {
 	if (telemetry)
@@ -172,6 +176,9 @@ bool driver_mode::init()
 		{
 			m_simtimelimit = limit;
 			WriteLog("Simulation will quit after " + to_string(m_simtimelimit, 3) + "s of simulated time");
+			// burn through the requested simulated time as fast as the sim allows
+			Global.fTimeSpeed = EU07_PROFILING_TIMESPEED;
+			WriteLog("Time acceleration set to x" + to_string(Global.fTimeSpeed, 0));
 		}
 	}
 
