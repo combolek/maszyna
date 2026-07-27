@@ -305,7 +305,8 @@ bool driver_mode::update()
 				Global.local_start_vehicle = change_train;
 				simulation::Train = train;
 				InOutKey();
-				m_relay.post(user_command::aidriverdisable, 0.0, 0.0, GLFW_PRESS, 0);
+				// profiling runs have nobody at the controls, so let the ai drive
+				m_relay.post(m_simtimelimit >= 0.0 ? user_command::aidriverenable : user_command::aidriverdisable, 0.0, 0.0, GLFW_PRESS, 0);
 				change_train.clear();
 			}
 		}
