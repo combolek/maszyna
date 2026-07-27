@@ -114,6 +114,8 @@ private:
     double m_primaryupdateaccumulator { m_secondaryupdaterate }; // keeps track of elapsed simulation time, for core fixed step routines
     double m_secondaryupdateaccumulator { m_secondaryupdaterate }; // keeps track of elapsed simulation time, for less important fixed step routines
     int iPause { 0 }; // wykrywanie zmian w zapauzowaniu
+    double m_simtimelimit { -1.0 }; // profiling aid: quit after this much simulated time, negative = no limit
+    double m_simtimebase { -1.0 }; // Timer::GetTime() sampled on the first update, negative until taken
 	command_relay m_relay;
 	std::string change_train; // train name awaiting entering
 };

@@ -159,6 +159,22 @@ driver_mode::driver_mode()
 bool driver_mode::init()
 {
 
+	// profiling aid: MASZYNA_SIM_TIME=<seconds> quits once that much simulated time has elapsed
+	if (char const *simtimelimit = std::getenv("MASZYNA_SIM_TIME"))
+	{
+		char *end = nullptr;
+		double const limit = std::strtod(simtimelimit, &end);
+		if (end == simtimelimit || *end != '\0' || limit < 0.0)
+		{
+			ErrorLog("Bad value of MASZYNA_SIM_TIME: \"" + std::string(simtimelimit) + "\", ignored");
+		}
+		else
+		{
+			m_simtimelimit = limit;
+			WriteLog("Simulation will quit after " + to_string(m_simtimelimit, 3) + "s of simulated time");
+		}
+	}
+
 	return m_input.init();
 }
 
@@ -167,6 +183,23 @@ bool driver_mode::update()
 {
 
 	Timer::UpdateTimers(Global.iPause != 0);
+
+	if (m_simtimelimit >= 0.0)
+	{
+		// piggyback on the engine's own clock rather than summing the deltas ourselves,
+		// so pause and forced deltas are accounted for exactly as the simulation sees them
+		if (m_simtimebase < 0.0)
+		{
+			m_simtimebase = Timer::GetTime();
+		}
+		if (Timer::GetTime() - m_simtimebase >= m_simtimelimit)
+		{
+			WriteLog("Simulated time limit of " + to_string(m_simtimelimit, 3) + "s reached, quitting");
+			Application.queue_quit(true);
+			return true;
+		}
+	}
+
 	Timer::subsystem.sim_total.start();
 
 	double const deltatime = Timer::GetDeltaTime(); // 0.0 gdy pauza
