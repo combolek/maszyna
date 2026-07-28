@@ -471,12 +471,14 @@ void TNESt3::SetSize( int const size, std::string const &params ) // ustawianie 
     else
     {
         Podskok = -1.0;
-        Przekladniki[1] = PrzekRapid = std::make_shared<TRapid>();
+        PrzekRapid = std::make_shared<TRapid>();
+        Przekladniki[1] = PrzekRapid;
 
         if (contains( params,"-ED") )
         {
             PrzekRapid->SetRapidParams(2, 18);
-            Przekladniki[3] = PrzekED = std::make_shared<TPrzekED>();
+            PrzekED = std::make_shared<TPrzekED>();
+            Przekladniki[3] = PrzekED;
         }
         else
         {
@@ -484,14 +486,21 @@ void TNESt3::SetSize( int const size, std::string const &params ) // ustawianie 
                 PrzekRapid->SetRapidParams(2, 16);
             else
                 PrzekRapid->SetRapidParams(2, 0);
-            Przekladniki[3] = PrzekPoslizg = std::make_shared<TPrzeciwposlizg>();
+            PrzekPoslizg = std::make_shared<TPrzeciwposlizg>();
+            Przekladniki[3] = PrzekPoslizg;
         }
     }
 
     if (contains(params,"AL2") )
-        Przekladniki[2] = PrzekCiagly = std::make_shared<TPrzekCiagly>();
+    {
+        PrzekCiagly = std::make_shared<TPrzekCiagly>();
+        Przekladniki[2] = PrzekCiagly;
+    }
     else if (contains(params,"PZZ") )
-        Przekladniki[2] = PrzekPZZ = std::make_shared<TPrzek_PZZ>();
+    {
+        PrzekPZZ = std::make_shared<TPrzek_PZZ>();
+        Przekladniki[2] = PrzekPZZ;
+    }
     else
         Przekladniki[2] = std::make_shared<TRura>();
 
