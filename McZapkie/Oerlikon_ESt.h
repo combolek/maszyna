@@ -17,6 +17,7 @@ http://mozilla.org/MPL/2.0/.
     Copyright (C) 2007-2014 Maciej Cierniak
 */
 
+#include <array>
 #include <memory>
 #include "hamulce.h" // Pascal unit
 #include "friction.h" // Pascal unit
@@ -179,7 +180,7 @@ class TNESt3 : public TBrake {
   private:
 	std::shared_ptr<TReservoir> CntrlRes; // zbiornik sterujacy
 	std::shared_ptr<TReservoir> Miedzypoj; // pojemnosc posrednia (urojona) do napelniania ZP i ZS
-	std::shared_ptr<TPrzekladnik> Przekladniki[ 4 ]; // indeksowane od 1, indeks jest zarazem pojemnoscia
+	std::array<std::shared_ptr<TPrzekladnik>, 4> Przekladniki; // indeksowane od 1, indeks jest zarazem pojemnoscia
 	// bezposrednie wskazniki do przekladnikow dostrajanych w GetPF, inicjowane przy tworzeniu
 	std::shared_ptr<TRapid> PrzekRapid;
 	std::shared_ptr<TPrzeciwposlizg> PrzekPoslizg;
