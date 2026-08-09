@@ -241,4 +241,4 @@ If detection still fails, padding the file (with comments) up to ~1 MB may hel
 
 -   Source code: [MPL 2.0](https://www.mozilla.org/en-US/MPL/2.0/)
     
--   Assets: [Custom license](https://eu07.pl/theme/Maszyna/dokumentacja/inne/readme_pliki/en-licence.html)
+-   Assets: [Custom license](https://eu07.pl/docs/Maszyna/dokumentacja/inne/readme_pliki/en-licence.html)
