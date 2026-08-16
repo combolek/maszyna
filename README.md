@@ -52,7 +52,7 @@ MaSzyna compiles and runs natively on **Linux** and **Windows**. Other platforms
     
 -   [make](https://www.gnu.org/software/make/)
     
--   A C++ compiler with C++14 support (we use some C++17 features, but older compilers may still work):
+-   A C++ compiler with C++20 support:
     
     -   **Windows:** Visual Studio 2022
         
