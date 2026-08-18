@@ -4514,7 +4514,19 @@ void TMoverParameters::UpdatePipePressure(double dt)
 			// (LocalBrakePosAEIM). When SplitEDPneumaticBrake is active the dedicated LocalBrake
 			// lever should apply pneumatic pressure on the locomotive directly, bypassing MED.
 			// LocHandleTimeTraxx also bypasses MED, but has 3 positions (brake-hold-unbrake).
-			double lbpa = LocHandleTimeTraxx ? eim_localbrake : (SplitEDPneumaticBrake ? LocalBrakePosA : 0.0);
+			double lbpa;
+			if (LocHandleTimeTraxx)
+			{
+				lbpa = eim_localbrake;
+			}
+			else if (SplitEDPneumaticBrake) // When LocHandleTimeTraxx and SplitEDPneumaticBrake are both active, lbpa is taken from LocHandleTimeTraxx, which is the desired behavior.
+			{
+				lbpa = LocalBrakePosA;
+			}
+			else
+			{
+				lbpa = 0.0;
+			}
 			dpLocalValve = LocHandle->GetPF(std::max(lbpa, LocalBrakePosAEIM), Hamulec->GetBCP(), ScndPipePress, dt, 0);
 		}
 
