@@ -229,7 +229,28 @@ jobs:
           cmake \
             --build build \
             --parallel "$(nproc)"
+            
+      - name: Prepare Linux Python environment
+        run: |
+          PYTHON_ROOT="$(python -c 'import sys; print(sys.base_prefix)')"
+          PYTHON_VERSION="$(python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
+          PYTHON_HOME="$GITHUB_WORKSPACE/build/bin/linuxpython64"
 
+          echo "Python root: $PYTHON_ROOT"
+          echo "Python version: $PYTHON_VERSION"
+          echo "Embedded Python home: $PYTHON_HOME"
+
+          python -m venv --copies "$PYTHON_HOME"
+
+          cp -a \
+            "$PYTHON_ROOT/lib/python${PYTHON_VERSION}/." \
+            "$PYTHON_HOME/lib/python${PYTHON_VERSION}/"
+
+          "$PYTHON_HOME/bin/python" -m pip install --upgrade pip
+          "$PYTHON_HOME/bin/python" -m pip install --no-cache-dir Pillow
+
+          "$PYTHON_HOME/bin/python" -c "from PIL import Image; print('Pillow:', Image.__version__)"
+          
       - name: Copy shaders
         run: |
           mkdir -p build/bin/shaders
