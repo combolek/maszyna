@@ -17,7 +17,8 @@ permissions:
   contents: read
 
 env:
-  CONFIG: RelWithDebInfo
+  CONFIG_WIN: RelWithDebInfo
+  CONFIG_LINUX: Release
 
 
 jobs:
@@ -83,13 +84,13 @@ jobs:
         shell: pwsh
         run: |
           cmake --build build `
-            --config $env:CONFIG `
+            --config $env:CONFIG_WIN `
             --parallel
 
       - name: Copy shaders
         shell: pwsh
         run: |
-          $output = "build/bin/$env:CONFIG"
+          $output = "build/bin/$env:CONFIG_WIN"
 
           New-Item `
             -ItemType Directory `
@@ -105,19 +106,19 @@ jobs:
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
         with:
-          name: maszyna-windows-x64-${{ env.CONFIG }}
+          name: maszyna-windows-x64-${{ env.CONFIG_WIN }}
           path: |
-            build/bin/${{ env.CONFIG }}/
+            build/bin/${{ env.CONFIG_WIN }}/
           if-no-files-found: error
           retention-days: 14
 
       - name: Upload Windows debug symbols
         uses: actions/upload-artifact@v4
         with:
-          name: maszyna-windows-x64-symbols-${{ env.CONFIG }}
+          name: maszyna-windows-x64-symbols-${{ env.CONFIG_WIN }}
           path: |
-            build/pdb/${{ env.CONFIG }}/*.pdb
-            build/bin/${{ env.CONFIG }}/*.map
+            build/pdb/${{ env.CONFIG_WIN }}/*.pdb
+            build/bin/${{ env.CONFIG_WIN }}/*.map
           if-no-files-found: warn
           retention-days: 14
 
@@ -190,20 +191,6 @@ jobs:
 
           sudo ldconfig
 
-      #
-      # This workaround already exists in the current GitHub CI.
-      # GCC doesn't like this GLM function in its current form.
-      #
-      - name: Patch GLM for GCC
-        run: |
-          sed -i \
-            's/GLM_FUNC_QUALIFIER std::string format(const char\* message, \.\.\.)/inline std::string format(const char* message, ...)/' \
-            ref/glm/glm/gtx/string_cast.inl
-
-          grep -n \
-            "std::string format(const char\* message" \
-            ref/glm/glm/gtx/string_cast.inl
-
       - name: Show environment
         run: |
           gcc --version
@@ -216,7 +203,7 @@ jobs:
           cmake \
             -S . \
             -B build \
-            -DCMAKE_BUILD_TYPE="${CONFIG}" \
+            -DCMAKE_BUILD_TYPE="${CONFIG_LINUX}" \
             -DWITH_BETTER_RENDERER=OFF \
             -DWITH_ZMQ=OFF \
             -DWITH_OPENVR=OFF \
@@ -259,7 +246,7 @@ jobs:
       - name: Upload Linux build
         uses: actions/upload-artifact@v4
         with:
-          name: maszyna-linux-x64-${{ env.CONFIG }}
+          name: maszyna-linux-x64-${{ env.CONFIG_LINUX }}
           path: |
             build/bin/
           if-no-files-found: error
