@@ -54,7 +54,7 @@ jobs:
           Get-Command python
 
           Write-Host "MSVC:"
-          & "${env:ProgramFiles}\Microsoft Visual Studio\Installer\vswhere.exe" `
+          & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" `
             -latest `
             -products * `
             -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
