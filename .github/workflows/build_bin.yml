@@ -1,0 +1,245 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - master
+
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CONFIG: RelWithDebInfo
+
+
+jobs:
+
+  # ============================================================
+  # Windows / MSVC
+  # ============================================================
+
+  windows:
+    name: Windows x64 / MSVC
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Setup Python 3.14
+        id: python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+          architecture: "x64"
+
+      - name: Show environment
+        shell: pwsh
+        run: |
+          python --version
+          cmake --version
+
+          Write-Host "Python:"
+          Get-Command python
+
+          Write-Host "MSVC:"
+          & "${env:ProgramFiles}\Microsoft Visual Studio\Installer\vswhere.exe" `
+            -latest `
+            -products * `
+            -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+            -property installationPath
+
+      # README: bootstrap vcpkg + install DirectX DXC
+      - name: Prepare Windows dependencies
+        shell: cmd
+        run: |
+          call setup.bat
+
+      - name: Configure
+        shell: pwsh
+        run: |
+          $pythonExe = "${{ steps.python.outputs.python-path }}"
+          $pythonRoot = Split-Path $pythonExe
+
+          Write-Host "Python root: $pythonRoot"
+
+          cmake -S . -B build `
+            -G "Visual Studio 17 2022" `
+            -A x64 `
+            "-DPython3_ROOT_DIR=$pythonRoot"
+
+      - name: Build
+        shell: pwsh
+        run: |
+          cmake --build build `
+            --config $env:CONFIG `
+            --parallel
+
+      - name: Copy shaders
+        shell: pwsh
+        run: |
+          $output = "build/bin/$env:CONFIG"
+
+          New-Item `
+            -ItemType Directory `
+            -Force `
+            -Path "$output/shaders" | Out-Null
+
+          Copy-Item `
+            -Path "shaders/*" `
+            -Destination "$output/shaders" `
+            -Recurse `
+            -Force
+
+      - name: Upload Windows build
+        uses: actions/upload-artifact@v4
+        with:
+          name: maszyna-windows-x64-${{ env.CONFIG }}
+          path: |
+            build/bin/${{ env.CONFIG }}/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Windows debug symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: maszyna-windows-x64-symbols-${{ env.CONFIG }}
+          path: |
+            build/pdb/${{ env.CONFIG }}/*.pdb
+            build/bin/${{ env.CONFIG }}/*.map
+          if-no-files-found: warn
+          retention-days: 14
+
+
+  # ============================================================
+  # Linux / GCC
+  # ============================================================
+
+  linux:
+    name: Linux x64 / GCC
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Setup Python 3.14
+        id: python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+
+          sudo apt-get install -y \
+            build-essential \
+            libgl1-mesa-dev \
+            libglew-dev \
+            libglfw3-dev \
+            libpng-dev \
+            libopenal-dev \
+            libluajit-5.1-dev \
+            libserialport-dev \
+            libsndfile1-dev \
+            xorg-dev \
+            libxkbcommon-dev \
+            libwayland-dev \
+            wayland-protocols
+
+      #
+      # Existing MaSzyna CI already builds OpenAL Soft 1.24.2,
+      # so retain that instead of relying only on Ubuntu's package.
+      #
+      - name: Build OpenAL Soft
+        run: |
+          git clone \
+            --depth 1 \
+            --branch 1.24.2 \
+            https://github.com/kcat/openal-soft.git \
+            /tmp/openal-soft
+
+          cmake \
+            -S /tmp/openal-soft \
+            -B /tmp/openal-soft/build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DALSOFT_EXAMPLES=OFF \
+            -DALSOFT_UTILS=OFF
+
+          cmake \
+            --build /tmp/openal-soft/build \
+            --parallel "$(nproc)"
+
+          sudo cmake \
+            --install /tmp/openal-soft/build
+
+          sudo ldconfig
+
+      #
+      # This workaround already exists in the current GitHub CI.
+      # GCC doesn't like this GLM function in its current form.
+      #
+      - name: Patch GLM for GCC
+        run: |
+          sed -i \
+            's/GLM_FUNC_QUALIFIER std::string format(const char\* message, \.\.\.)/inline std::string format(const char* message, ...)/' \
+            ref/glm/glm/gtx/string_cast.inl
+
+          grep -n \
+            "std::string format(const char\* message" \
+            ref/glm/glm/gtx/string_cast.inl
+
+      - name: Show environment
+        run: |
+          gcc --version
+          g++ --version
+          cmake --version
+          python --version
+
+      - name: Configure
+        run: |
+          cmake \
+            -S . \
+            -B build \
+            -DCMAKE_BUILD_TYPE="${CONFIG}" \
+            -DWITH_BETTER_RENDERER=OFF \
+            -DWITH_ZMQ=OFF \
+            -DWITH_OPENVR=OFF \
+            -DUSE_LTO=OFF \
+            -DPython3_EXECUTABLE="${{ steps.python.outputs.python-path }}" \
+            -DCMAKE_CXX_FLAGS="-Wno-attributes -fno-inline-functions-called-once"
+
+      - name: Build
+        run: |
+          cmake \
+            --build build \
+            --parallel "$(nproc)"
+
+      - name: Copy shaders
+        run: |
+          mkdir -p build/bin/shaders
+          cp -R shaders/. build/bin/shaders/
+
+      - name: Upload Linux build
+        uses: actions/upload-artifact@v4
+        with:
+          name: maszyna-linux-x64-${{ env.CONFIG }}
+          path: |
+            build/bin/
+          if-no-files-found: error
+          retention-days: 14
