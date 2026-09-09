@@ -50,6 +50,8 @@ public:
     virtual void on_mouse_button( int Button, int Action, int Mods ) = 0;
     virtual void on_scroll( double Xoffset, double Yoffset ) = 0;
     virtual void on_window_resize( int w, int h ) = 0;
+    // called when the application window gains or loses input focus
+    virtual void on_focus_change( bool Focus ) { }
     virtual void on_event_poll() = 0;
     virtual bool is_command_processor() const = 0;
 
