@@ -909,6 +909,13 @@ void eu07_application::on_focus_change(bool focus)
 		command_relay relay;
 		relay.post(user_command::focuspauseset, focus ? 1.0 : 0.0, 0.0, GLFW_PRESS, 0);
 	}
+
+	if (false == m_modestack.empty())
+	{
+		// NOTE: glfw reports the focus change before it releases the keys held at that point,
+		// so the active mode can still tell a genuine key release from a focus-loss artefact
+		m_modes[m_modestack.top()]->on_focus_change(focus);
+	}
 }
 
 void eu07_application::on_window_resize(int w, int h)

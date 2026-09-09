@@ -474,6 +474,24 @@ void driver_mode::on_key(int const Key, int const Scancode, int const Action, in
 
 	bool anyModifier = Mods & (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL | GLFW_MOD_ALT);
 
+	bool const isalt = (Key == GLFW_KEY_LEFT_ALT || Key == GLFW_KEY_RIGHT_ALT);
+	if (isalt)
+	{
+		// alt toggles the picking mode only when tapped on its own, so that shortcuts
+		// which merely start with it (alt+tab and the like) don't flip the mouse mode
+		if (Action == GLFW_PRESS)
+		{
+			m_altpicktoggle = true;
+			// shift and ctrl pick the target mode instead of flipping it. latched here rather than
+			// read on release, so that letting go of them first doesn't change what alt does
+			m_altpickmode = (Global.shiftState ? std::optional<bool>(true) : Global.ctrlState ? std::optional<bool>(false) : std::nullopt);
+		}
+	}
+	else if (Action != GLFW_RELEASE)
+	{
+		m_altpicktoggle = false;
+	}
+
 	// give the ui first shot at the input processing...
 	if (!anyModifier && true == m_userinterface->on_key(Key, Action))
 	{
@@ -490,19 +508,33 @@ void driver_mode::on_key(int const Key, int const Scancode, int const Action, in
 		return;
 	}
 
-	if (true == Global.InputMouse && (Key == GLFW_KEY_LEFT_ALT || Key == GLFW_KEY_RIGHT_ALT))
+	if (isalt && Action == GLFW_RELEASE)
 	{
-		// if the alt key was pressed toggle control picking mode and set matching cursor behaviour
-		if (Action == GLFW_PRESS)
+		// if the alt key was tapped toggle control picking mode and set matching cursor behaviour
+		if (true == m_altpicktoggle)
 		{
-			// toggle picking mode
-			set_picking(Global.shiftState ? true : Global.ctrlState ? false : !Global.ControlPicking);
+			m_altpicktoggle = false;
+			if (true == Global.InputMouse)
+			{
+				// toggle picking mode
+				set_picking(m_altpickmode.value_or(!Global.ControlPicking));
+			}
 		}
 	}
 
 	if (Action != GLFW_RELEASE)
 	{
 		OnKeyDown(Key);
+	}
+}
+
+void driver_mode::on_focus_change(bool const Focus)
+{
+	if (false == Focus)
+	{
+		// the key releases glfw sends along with the focus loss aren't user input,
+		// a held alt shouldn't toggle the picking mode on the way out
+		m_altpicktoggle = false;
 	}
 }
 
@@ -526,6 +558,12 @@ void driver_mode::on_cursor_pos(double const Horizontal, double const Vertical)
 
 void driver_mode::on_mouse_button(int const Button, int const Action, int const Mods)
 {
+
+	if (Action == GLFW_PRESS)
+	{
+		// alt used as a modifier for a click isn't a picking mode toggle
+		m_altpicktoggle = false;
+	}
 
 	// give the ui first shot at the input processing...
 	if (true == m_userinterface->on_mouse_button(Button, Action))
