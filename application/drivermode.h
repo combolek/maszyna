@@ -45,6 +45,7 @@ public:
     void on_mouse_button( int Button, int Action, int Mods ) override;
     void on_scroll( double Xoffset, double Yoffset ) override;
 	void on_window_resize( int w, int h ) override { ; }
+    void on_focus_change( bool Focus ) override;
     void on_event_poll() override;
     bool is_command_processor() const override;
 
@@ -104,6 +105,8 @@ private:
     std::array<basic_event *, 10> KeyEvents { nullptr }; // eventy wyzwalane z klawiaury
     TCamera Camera;
     TCamera DebugCamera;
+    bool m_altpicktoggle { false }; // alt is held down and can still work as the picking mode toggle
+    std::optional<bool> m_altpickmode; // picking mode the modifiers held along with alt ask for, empty to flip it
     int m_externalviewmode { view::consistfront }; // selected external view mode
 	bool m_externalview { true };
     std::array<view_config, view::count_> m_externalviewconfigs;
