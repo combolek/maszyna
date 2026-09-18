@@ -140,6 +140,8 @@ struct global_settings {
     bool bAdjustScreenFreq{ true };
     float BaseDrawRange{ 2500.f };
     int DynamicLightCount{ 7 };
+    // docelowa barwa pomarańczowych świateł sygnałowych; domyślnie żółty skraj zakresu z tabeli 1 instrukcji Ie-123
+    glm::vec3 SignalColorOrange{ 255.f / 255.f, 145.f / 255.f, 0.f };
     bool ScaleSpecularValues{ true };
     std::string GfxRenderer{ "default" };
     bool LegacyRenderer{ false };

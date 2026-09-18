@@ -16,6 +16,7 @@ Copyright (C) 2001-2004  Marcin Wozniak, Maciej Czapkiewicz and others
 #include "model/Model3d.h"
 
 #include "utilities/Globals.h"
+#include "utilities/color.h"
 #include "utilities/Logs.h"
 #include "rendering/renderer.h"
 #include "utilities/Timer.h"
@@ -42,6 +43,28 @@ std::string *TSubModel::pasText;
 // 0x38380038 - tekstura -4 używana w danym cyklu, pozostałe nie
 // 0x3F3F003F - wszystkie wymienne tekstury używane w danym cyklu
 // Ale w TModel3d okerśla przezroczystość tekstur wymiennych!
+
+// zakres barw uznawanych za pomarańczowe światło sygnałowe; poza nim leżą czerwone, żółte i ciepłe białe
+float const signalorangehuemin = 15.f;
+float const signalorangehuemax = 40.f;
+float const signalorangesatmin = 0.8f;
+
+// przestawia odcień pomarańczowych świateł sygnałowych na wskazany w konfiguracji, żeby lepiej odróżniały się od czerwonych
+static void adjust_signal_color(glm::vec4 &Diffuse)
+{
+	// jasność źródła bywa większa od 1.0 (hotspotpower), więc odcień liczymy na wartości znormalizowanej i przywracamy skalę na końcu
+	auto const magnitude = std::max({Diffuse.r, Diffuse.g, Diffuse.b});
+	if (magnitude <= 0.f)
+		return;
+
+	auto const hsv = colors::RGBtoHSV(glm::vec3(Diffuse) / magnitude);
+	if ((hsv.x < signalorangehuemin) || (hsv.x > signalorangehuemax) || (hsv.y < signalorangesatmin))
+		return;
+
+	auto const target = colors::RGBtoHSV(Global.SignalColorOrange);
+	auto const color = colors::HSVtoRGB(glm::vec3(target.x, target.y, 1.f)) * magnitude;
+	Diffuse = glm::vec4(color, Diffuse.a);
+}
 
 TSubModel::~TSubModel()
 {
@@ -389,6 +412,7 @@ std::pair<int, int> TSubModel::Load(cParser &parser, bool dynamic)
 		}
 		m_geometry.vertex_count = 1;
 		iFlags |= 0x4030; // drawn both in solid (light point) and transparent (light glare) phases
+		adjust_signal_color(f4Diffuse);
 	}
 	else if (eType < TP_ROTATOR)
 	{
@@ -1916,6 +1940,9 @@ void TSubModel::deserialize(std::istream &s)
 	// only multiply diffuse on experimental renderer
 	if (!Global.NvRenderer)
 		f4Diffuse /= diffuseMultiplier <= 0.0 ? 1.0 : diffuseMultiplier;
+
+	if (eType == TP_FREESPOTLIGHT)
+		adjust_signal_color(f4Diffuse);
 
 	// necessary rotations were already done during t3d->e3d conversion
 	m_rotation_init_done = true;

@@ -311,6 +311,26 @@ bool global_settings::ConfigParseGraphics(cParser& Parser, const std::string& to
         return true;
     }
 
+    if (token == "gfx.signalcolor.orange")
+    {
+        std::string value;
+        ParseOne(Parser, value);
+
+        try
+        {
+            auto const color{ std::stoul(value, nullptr, 16) };
+            SignalColorOrange = glm::vec3{
+                (color >> 16 & 0xff) / 255.f,
+                (color >> 8  & 0xff) / 255.f,
+                (color       & 0xff) / 255.f };
+        }
+        catch (std::exception const &)
+        {
+            ErrorLog("Bad config: expected a hex RGB value for \"gfx.signalcolor.orange\", got \"" + value + "\"");
+        }
+        return true;
+    }
+
     if (token == "gfxrenderer")
     {
         ParseOne(Parser, GfxRenderer);
@@ -1563,6 +1583,13 @@ global_settings::export_as_text( std::ostream &Output ) const {
     export_as_text( Output, "maxcabtexturesize", iMaxCabTextureSize );
     export_as_text( Output, "movelight", fMoveLight );
     export_as_text( Output, "dynamiclights", DynamicLightCount );
+    Output
+        << "gfx.signalcolor.orange "
+        << std::hex << std::uppercase << std::setfill( '0' ) << std::setw( 6 )
+        << ( ( static_cast<int>( SignalColorOrange.r * 255 + 0.5f ) << 16 )
+           | ( static_cast<int>( SignalColorOrange.g * 255 + 0.5f ) <<  8 )
+           |   static_cast<int>( SignalColorOrange.b * 255 + 0.5f ) )
+        << std::dec << std::nouppercase << std::setfill( ' ' ) << "\n";
     if( std::isnormal( ScenarioTimeOverride ) ) {
         export_as_text( Output, "scenario.time.override", ScenarioTimeOverride );
     }
