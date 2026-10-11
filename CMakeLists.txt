@@ -92,6 +92,18 @@ set(VCPKG_INSTALLED_PATH "${VCPKG_ROOT}/installed/x64-windows")
 list(APPEND CMAKE_PREFIX_PATH "${VCPKG_INSTALLED_PATH}")
 list(APPEND CMAKE_MODULE_PATH "${VCPKG_INSTALLED_PATH}/share")
 
+# Enable compiling with debug symbols
+if(GENERATE_PDB)
+    if (MSVC)
+        # Add compile options for debugging
+        add_compile_options(/Zi)   # Always enable debug symbols
+        add_link_options(/DEBUG /MAP)
+    else()
+        # GCC/Clang (ensure -g is set for all configurations)
+        add_compile_options(-g)
+    endif()
+endif()
+
 set(SOURCES
 "model/Texture.cpp"
 "utilities/Timer.cpp"
@@ -683,27 +695,6 @@ if (NOT TARGET yaml-cpp)
 endif ()
 target_link_libraries(eu07_settings INTERFACE yaml-cpp)
 
-
-# Enable compiling with debug symbols
-if(GENERATE_PDB)
-    if (MSVC)
-        # Ensure Debug and Release configurations use appropriate runtime libraries
-        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Zi /MDd")
-        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Zi /MD")
-
-        # Add compile options for debugging
-        add_compile_options(/Zi)   # Always enable debug symbols
-        add_link_options(/DEBUG /MAP)
-
-        # Ensure that the PCH is built with the correct runtime library for each configuration
-        set_target_properties(${PROJECT_NAME} eu07_core PROPERTIES
-            COMPILE_OPTIONS "$<$<CONFIG:Debug>:/MDd>$<$<CONFIG:Release>:/MD>")
-    else()
-        # GCC/Clang (ensure -g is set for all configurations)
-        add_compile_options(-g)
-    endif()
-endif()
-
 if(ENABLE_MCC AND MSVC)
     message(STATUS "Enabling multi-processor compilation for MSVC.")
 	add_compile_options(/MP)
@@ -735,4 +726,4 @@ if(WITH_TESTS)
 	# Visual Studio builds rerun them with the next change of the game)
 	set_property(TARGET ${PROJECT_NAME} APPEND PROPERTY LINK_DEPENDS
 		$<TARGET_FILE:eu07_unit_tests> ${UNIT_TEST_DATA} "${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/run_tests.cmake")
-endif()
+endif()
